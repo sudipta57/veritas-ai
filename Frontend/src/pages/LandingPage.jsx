@@ -75,9 +75,11 @@ export default function LandingPage() {
         position: 'sticky', top: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 48px', height: 60,
-        background: 'rgba(244,241,234,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--border)',
+        background: 'rgba(250,247,241,0.42)',
+        backdropFilter: 'blur(5px) saturate(110%)',
+        WebkitBackdropFilter: 'blur(13px) saturate(100%)',
+        borderBottom: '1px solid rgba(255,255,255,0.55)',
+        boxShadow: '0 8px 24px rgba(26,39,68,0.08)',
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -95,7 +97,7 @@ export default function LandingPage() {
 
         {/* Nav links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {['Features', 'How it works', 'Pricing', 'Research'].map(l => (
+          {[''].map(l => (
             <a key={l} href="#" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)', transition: 'color 0.12s' }}
               onMouseEnter={e => e.target.style.color = 'var(--navy)'}
               onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}
@@ -125,10 +127,47 @@ export default function LandingPage() {
 
         <div className="animate-in">
           {/* Eyebrow */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 99, padding: '6px 14px', marginBottom: 28 }}>
-            <div className="live-indicator" style={{ fontSize: '0.6rem' }}><span className="live-dot" />&nbsp;Live Intelligence</div>
-            <div style={{ width: 1, height: 12, background: 'var(--border)' }} />
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>Digital Jurist · v2.4.0</span>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '7px 10px',
+            marginBottom: 28,
+            borderRadius: 999,
+            border: '1px solid rgba(255,255,255,0.65)',
+            background: 'linear-gradient(120deg, rgba(255,255,255,0.78), rgba(255,255,255,0.56))',
+            boxShadow: '0 10px 24px rgba(26,39,68,0.12)',
+            backdropFilter: 'blur(10px) saturate(125%)',
+            WebkitBackdropFilter: 'blur(10px) saturate(125%)',
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '4px 10px',
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.16), rgba(22,163,74,0.08))',
+              border: '1px solid rgba(22,163,74,0.22)',
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '0.86rem', color: 'var(--green-vivid)' }}>bolt</span>
+              <div className="live-indicator" style={{ fontSize: '0.62rem', color: 'var(--green)' }}>
+                <span className="live-dot" />&nbsp;Live Intelligence
+              </div>
+            </div>
+
+            <span style={{
+              fontSize: '0.69rem',
+              color: 'var(--navy)',
+              fontFamily: 'var(--font-mono)',
+              letterSpacing: '0.09em',
+              textTransform: 'uppercase',
+              background: 'rgba(26,39,68,0.06)',
+              border: '1px solid rgba(26,39,68,0.1)',
+              borderRadius: 999,
+              padding: '4px 10px',
+            }}>
+              Digital Jurist · v2.4.0
+            </span>
           </div>
 
           {/* Headline */}
@@ -381,18 +420,35 @@ export default function LandingPage() {
 
             {/* Links */}
             {[
-              { heading: 'Product', links: ['Features', 'Pricing', 'API Docs', 'Changelog'] },
-              { heading: 'Company', links: ['About', 'Research', 'Careers', 'Press'] },
-              { heading: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Security', 'Compliance'] },
+              {
+                heading: 'Legal',
+                links: [
+                  { label: 'About', to: '/about' },
+                  { label: 'Privacy Policy', to: '/privacy' },
+                  { label: 'Terms of Service', to: '/terms' },
+                  { label: 'Security', to: '/security' },
+                ],
+              },
             ].map(col => (
               <div key={col.heading}>
                 <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', marginBottom: 12 }}>{col.heading}</div>
                 {col.links.map(l => (
-                  <div key={l} style={{ marginBottom: 8 }}>
-                    <a href="#" style={{ fontSize: '0.845rem', color: 'var(--text-secondary)', transition: 'color 0.12s' }}
+                  <div key={l.label} style={{ marginBottom: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(l.to)}
+                      style={{
+                        fontSize: '0.845rem',
+                        color: 'var(--text-secondary)',
+                        transition: 'color 0.12s',
+                        background: 'transparent',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                      }}
                       onMouseEnter={e => e.target.style.color = 'var(--navy)'}
                       onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}
-                    >{l}</a>
+                    >{l.label}</button>
                   </div>
                 ))}
               </div>
@@ -400,11 +456,35 @@ export default function LandingPage() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: 20, flexWrap: 'wrap', gap: 12 }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>© 2024 VerifAI Inc. All rights reserved.</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>© 2026 VerifAI Inc. All rights reserved.</span>
             <div style={{ display: 'flex', gap: 6 }}>
-              <span className="badge badge-navy" style={{ fontSize: '0.58rem' }}>SOC 2 Type II</span>
-              <span className="badge badge-teal" style={{ fontSize: '0.58rem' }}>GDPR Compliant</span>
-              <span className="badge badge-blue" style={{ fontSize: '0.58rem' }}>ISO 27001</span>
+              <button
+                className="badge badge-navy"
+                type="button"
+                title="Prove you are secure"
+                onClick={() => navigate('/trust/soc-2')}
+                style={{ fontSize: '0.58rem', cursor: 'pointer', backgroundClip: 'padding-box' }}
+              >
+                SOC 2 Type II
+              </button>
+              <button
+                className="badge badge-teal"
+                type="button"
+                title="Respect user privacy"
+                onClick={() => navigate('/trust/gdpr')}
+                style={{ fontSize: '0.58rem', cursor: 'pointer', backgroundClip: 'padding-box' }}
+              >
+                GDPR Compliant
+              </button>
+              <button
+                className="badge badge-blue"
+                type="button"
+                title="Follow a security system"
+                onClick={() => navigate('/trust/iso-27001')}
+                style={{ fontSize: '0.58rem', cursor: 'pointer', backgroundClip: 'padding-box' }}
+              >
+                ISO 27001
+              </button>
             </div>
           </div>
         </div>

@@ -429,13 +429,15 @@ select {
   justify-content: space-between;
   padding: 0 28px;
   height: 54px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: rgba(250, 247, 241, 0.46);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.58);
   position: sticky;
   top: 0;
   z-index: 50;
   gap: 16px;
-  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  backdrop-filter: blur(16px) saturate(130%);
+  box-shadow: 0 8px 24px rgba(26, 39, 68, 0.08);
 }
 
 .topbar-left {
@@ -695,6 +697,7 @@ select {
 
 .card-glass {
   background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-md);
