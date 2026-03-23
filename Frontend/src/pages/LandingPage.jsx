@@ -1,10 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const STATS = [
-  { value: '2.4B+', label: 'Sources Indexed',   icon: 'storage' },
-  { value: '127ms', label: 'Avg. Response',      icon: 'bolt' },
-  { value: '99.2%', label: 'Uptime SLA',         icon: 'verified' },
-  { value: '14.8K', label: 'Analyses Completed', icon: 'analytics' },
+  { end: 2.4, decimals: 1, suffix: 'B+', label: 'Sources Indexed', icon: 'storage' },
+  { end: 127, decimals: 0, suffix: 'ms', label: 'Avg. Response', icon: 'bolt' },
+  { end: 99.2, decimals: 1, suffix: '%', label: 'Uptime SLA', icon: 'verified' },
+  { end: 14.8, decimals: 1, suffix: 'K', label: 'Analyses Completed', icon: 'analytics' },
 ];
 
 const FEATURES = [
@@ -66,6 +67,50 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const statsSectionRef = useRef(null);
+  const [hasStartedStatsCount, setHasStartedStatsCount] = useState(false);
+  const [animatedStats, setAnimatedStats] = useState(() => STATS.map(() => 0));
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasStartedStatsCount(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35 }
+    );
+
+    if (statsSectionRef.current) observer.observe(statsSectionRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasStartedStatsCount) return;
+
+    let frameId;
+    let startTime;
+    const durationMs = 1400;
+
+    const tick = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / durationMs, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      setAnimatedStats(STATS.map((stat) => stat.end * eased));
+
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [hasStartedStatsCount]);
+
+  const formatStatValue = (stat, value) => `${value.toFixed(stat.decimals)}${stat.suffix}`;
 
   return (
     <div style={{ fontFamily: 'var(--font-body)', background: 'var(--bg)', color: 'var(--text-primary)', minHeight: '100vh' }}>
@@ -75,11 +120,11 @@ export default function LandingPage() {
         position: 'sticky', top: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 48px', height: 60,
-        background: 'rgba(250,247,241,0.42)',
-        backdropFilter: 'blur(5px) saturate(110%)',
-        WebkitBackdropFilter: 'blur(13px) saturate(100%)',
-        borderBottom: '1px solid rgba(255,255,255,0.55)',
-        boxShadow: '0 8px 24px rgba(26,39,68,0.08)',
+        background: 'var(--nav-glass-bg)',
+        backdropFilter: 'blur(11px) saturate(130%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(130%)',
+        borderBottom: '1px solid var(--nav-glass-border)',
+        boxShadow: 'var(--nav-glass-shadow)',
       }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -116,7 +161,7 @@ export default function LandingPage() {
 
       {/* ──────────── HERO ──────────── */}
       <section style={{
-        padding: '100px 48px 80px',
+        padding: '100px 48px 116px',
         textAlign: 'center',
         background: 'linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%)',
         position: 'relative', overflow: 'hidden',
@@ -134,9 +179,9 @@ export default function LandingPage() {
             padding: '7px 10px',
             marginBottom: 28,
             borderRadius: 999,
-            border: '1px solid rgba(255,255,255,0.65)',
-            background: 'linear-gradient(120deg, rgba(255,255,255,0.78), rgba(255,255,255,0.56))',
-            boxShadow: '0 10px 24px rgba(26,39,68,0.12)',
+            border: '1px solid var(--hero-chip-border)',
+            background: 'var(--hero-chip-bg)',
+            boxShadow: 'var(--hero-chip-shadow)',
             backdropFilter: 'blur(10px) saturate(125%)',
             WebkitBackdropFilter: 'blur(10px) saturate(125%)',
           }}>
@@ -146,8 +191,8 @@ export default function LandingPage() {
               gap: 7,
               padding: '4px 10px',
               borderRadius: 999,
-              background: 'linear-gradient(135deg, rgba(34,197,94,0.16), rgba(22,163,74,0.08))',
-              border: '1px solid rgba(22,163,74,0.22)',
+              background: 'var(--hero-live-bg)',
+              border: '1px solid var(--hero-live-border)',
             }}>
               <span className="material-icons-round" style={{ fontSize: '0.86rem', color: 'var(--green-vivid)' }}>bolt</span>
               <div className="live-indicator" style={{ fontSize: '0.62rem', color: 'var(--green)' }}>
@@ -157,12 +202,12 @@ export default function LandingPage() {
 
             <span style={{
               fontSize: '0.69rem',
-              color: 'var(--navy)',
               fontFamily: 'var(--font-mono)',
               letterSpacing: '0.09em',
               textTransform: 'uppercase',
-              background: 'rgba(26,39,68,0.06)',
-              border: '1px solid rgba(26,39,68,0.1)',
+              background: 'var(--hero-meta-bg)',
+              border: '1px solid var(--hero-meta-border)',
+              color: 'var(--hero-meta-text)',
               borderRadius: 999,
               padding: '4px 10px',
             }}>
@@ -182,7 +227,12 @@ export default function LandingPage() {
             margin: '0 auto 24px',
           }}>
             Know what's true.<br />
-            <span className="gradient-text">Instantly.</span>
+            <span className="gradient-text">Instantly</span>
+            <span className="serial-dots" aria-hidden="true">
+              <span className="dot">.  </span>
+              <span className="dot">.  </span>
+              <span className="dot">.  </span>
+            </span>
           </h1>
 
           {/* Subtitle */}
@@ -235,7 +285,10 @@ export default function LandingPage() {
       </section>
 
       {/* ──────────── STATS BAR ──────────── */}
-      <section style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'var(--surface-card)' }}>
+      <section
+        ref={statsSectionRef}
+        style={{ marginTop: 12, borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', background: 'var(--surface-card)' }}
+      >
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
           {STATS.map((s, i) => (
             <div key={s.label} style={{
@@ -251,7 +304,9 @@ export default function LandingPage() {
                 <span className="material-icons-round" style={{ fontSize: '1.1rem', color: 'var(--navy)' }}>{s.icon}</span>
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                  {formatStatValue(s, animatedStats[i] ?? 0)}
+                </div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>{s.label}</div>
               </div>
             </div>

@@ -58,6 +58,10 @@ export default function Sidebar() {
 
       {/* Footer links */}
       <div className="sidebar-footer">
+        <NavLink to="/" end className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
+          <span className="material-icons-round">home</span>
+          Back to Home
+        </NavLink>
         <NavLink to="/settings" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
           <span className="material-icons-round">settings</span>
           Settings
@@ -66,7 +70,7 @@ export default function Sidebar() {
           <span className="material-icons-round">help_outline</span>
           Support
         </NavLink>
-        <NavLink to="/privacy" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
+        <NavLink to="/settings" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
           <span className="material-icons-round">person_outline</span>
           Account
         </NavLink>

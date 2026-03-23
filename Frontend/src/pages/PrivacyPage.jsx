@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 const SECTIONS = [
   { icon:'gavel',       title:'Our Methodology',            body:`VerifAI's Digital Jurist operates on three pillars: Forensic Linguistics, Network Analysis, and Probabilistic Confidence Scoring. We extract atomic claims using advanced NLP, then crawl 1,284 verified sources in real-time. Our Jurist model assigns weighted confidence scores based on source authority, consensus breadth, and semantic coherence.` },
   { icon:'lock',        title:'Data Privacy & Security',    body:`All submitted content is processed ephemerally using TLS 1.3+ encrypted channels. Input text is never stored beyond the active analysis session and is permanently discarded once verification is complete. We comply with GDPR Article 5 and CCPA standards. Account data is stored with AES-256 encryption.` },
@@ -7,11 +9,21 @@ const SECTIONS = [
 ];
 
 export default function PrivacyPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="animate-in">
       <div className="page-header">
-        <h1 className="page-title">Privacy, Terms & Methodology</h1>
-        <p className="page-subtitle">Our commitment to neutral inquiry, data privacy, and responsible AI deployment.</p>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
+          <div>
+            <h1 className="page-title">Privacy, Terms & Methodology</h1>
+            <p className="page-subtitle">Our commitment to neutral inquiry, data privacy, and responsible AI deployment.</p>
+          </div>
+          <button className="btn btn-secondary" type="button" onClick={() => navigate('/')}>
+            <span className="material-icons-round">home</span>
+            Back to Home
+          </button>
+        </div>
       </div>
 
       <div className="page-body">

@@ -12,6 +12,17 @@ export default function Topbar() {
       </div>
 
       <div className="topbar-right">
+        <button
+          className="btn btn-secondary"
+          type="button"
+          onClick={() => navigate('/')}
+          style={{ padding: '7px 12px', fontSize: '0.78rem' }}
+          title="Back to Home"
+        >
+          <span className="material-icons-round">home</span>
+          Home
+        </button>
+
         {/* Notifications */}
         <div className="topbar-icon-btn" title="Notifications">
           <span className="material-icons-round">notifications_none</span>

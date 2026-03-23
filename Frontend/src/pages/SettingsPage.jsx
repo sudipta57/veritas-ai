@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-export default function SettingsPage() {
+export default function SettingsPage({ isDarkMode = false, onToggleDarkMode = () => {} }) {
   const [model, setModel] = useState('ultra');
-  const [prefs, setPrefs] = useState({ notify: true, autosave: true, dark: false });
+  const [prefs, setPrefs] = useState({ notify: true, autosave: true, dark: isDarkMode });
   const toggle = k => setPrefs(p => ({ ...p, [k]: !p[k] }));
 
   return (
@@ -74,7 +74,17 @@ export default function SettingsPage() {
                   <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>{p.desc}</div>
                 </div>
                 <label className="toggle">
-                  <input type="checkbox" checked={prefs[p.key]} onChange={() => toggle(p.key)} />
+                  <input
+                    type="checkbox"
+                    checked={p.key === 'dark' ? isDarkMode : prefs[p.key]}
+                    onChange={() => {
+                      if (p.key === 'dark') {
+                        onToggleDarkMode(!isDarkMode);
+                        return;
+                      }
+                      toggle(p.key);
+                    }}
+                  />
                   <span className="toggle-track"></span>
                 </label>
               </div>

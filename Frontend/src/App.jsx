@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
@@ -35,6 +36,17 @@ function DashboardLayout({ children }) {
 }
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('verifai-theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    document.body.classList.toggle('dark-theme', isDarkMode);
+    localStorage.setItem('verifai-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -47,15 +59,18 @@ export default function App() {
         <Route path="/history" element={<DashboardLayout><HistoryPage /></DashboardLayout>} />
         <Route path="/reports" element={<DashboardLayout><ReportsPage /></DashboardLayout>} />
         <Route path="/sources" element={<DashboardLayout><SourcesPage /></DashboardLayout>} />
-        <Route path="/settings" element={<DashboardLayout><SettingsPage /></DashboardLayout>} />
+        <Route
+          path="/settings"
+          element={<DashboardLayout><SettingsPage isDarkMode={isDarkMode} onToggleDarkMode={setIsDarkMode} /></DashboardLayout>}
+        />
         <Route path="/support" element={<DashboardLayout><SupportPage /></DashboardLayout>} />
-        <Route path="/privacy" element={<DashboardLayout><PrivacyPage /></DashboardLayout>} />
-        <Route path="/about" element={<DashboardLayout><AboutPage /></DashboardLayout>} />
-        <Route path="/terms" element={<DashboardLayout><TermsPage /></DashboardLayout>} />
-        <Route path="/security" element={<DashboardLayout><SecurityPage /></DashboardLayout>} />
-        <Route path="/trust/soc-2" element={<DashboardLayout><Soc2Page /></DashboardLayout>} />
-        <Route path="/trust/gdpr" element={<DashboardLayout><GdprPage /></DashboardLayout>} />
-        <Route path="/trust/iso-27001" element={<DashboardLayout><Iso27001Page /></DashboardLayout>} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="/trust/soc-2" element={<Soc2Page />} />
+        <Route path="/trust/gdpr" element={<GdprPage />} />
+        <Route path="/trust/iso-27001" element={<Iso27001Page />} />
       </Routes>
     </BrowserRouter>
   );
