@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAnalysis } from '../store/analysisStore';
+import { startVerification } from '../services/api';
 
 export default function VerifyPage() {
   const navigate = useNavigate();
@@ -7,6 +9,8 @@ export default function VerifyPage() {
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [model, setModel] = useState('ultra');
+  const { dispatch } = useAnalysis();
+  const isSubmitting = useRef(false);
   const [opts, setOpts] = useState({
     'Deep Source Triangulation': true,
     'AI Content Detection': true,
@@ -34,6 +38,50 @@ export default function VerifyPage() {
 
   const charLimit = 10000;
   const charPct = Math.min((text.length / charLimit) * 100, 100);
+
+  const handleSubmit = () => {
+    if (isSubmitting.current) return;
+    if (tab === 'url' && !url.trim()) return;
+    if (tab !== 'url' && !text.trim()) return;
+
+    isSubmitting.current = true;
+
+    const inputType = tab === 'url' ? 'URL' : 'TEXT';
+    const inputContent = tab === 'url' ? url : text;
+
+    dispatch({ type: 'START', inputType, inputContent });
+
+    const cancel = startVerification(
+      { input_type: inputType, content: inputContent },
+      (event) => {
+        if (event.stage === 'extracting') {
+          dispatch({ type: 'SET_STAGE', stage: 'extracting' });
+        } else if (event.stage === 'claims_found') {
+          dispatch({ type: 'CLAIMS_FOUND', claims: event.data.claims });
+        } else if (event.stage === 'retrieving') {
+          dispatch({ type: 'SET_STAGE', stage: 'retrieving' });
+        } else if (event.stage === 'verifying') {
+          dispatch({ type: 'CLAIM_VERIFIED', claim_id: event.data.claim_id });
+        } else if (event.stage === 'complete') {
+          dispatch({ type: 'COMPLETE', report: event.data });
+          navigate('/reports');
+        } else if (event.stage === 'error') {
+          dispatch({ type: 'ERROR', message: event.data.message });
+          isSubmitting.current = false;
+        }
+      },
+      () => {
+        isSubmitting.current = false;
+      },
+      (err) => {
+        dispatch({ type: 'ERROR', message: err });
+        isSubmitting.current = false;
+      }
+    );
+
+    dispatch({ type: 'SET_CANCEL', cancelFn: cancel });
+    navigate('/live');
+  };
 
   return (
     <div className="animate-in">
@@ -92,7 +140,7 @@ export default function VerifyPage() {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button className="btn btn-secondary" onClick={() => { setText(''); setUrl(''); }}>Clear</button>
-              <button className="btn btn-primary" onClick={() => navigate('/live')}>
+              <button className="btn btn-primary" onClick={handleSubmit}>
                 <span className="material-icons-round">send</span>Begin Analysis
               </button>
             </div>

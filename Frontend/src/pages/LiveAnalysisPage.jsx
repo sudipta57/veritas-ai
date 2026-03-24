@@ -1,16 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const INSIGHTS = [
-  { type: 'verified', title: 'Verified Verdict', badge: 'true', conf: 99.2, text: '"The unemployment rate in the US fell to 3.4% in early 2023, hitting a 50-year low."', sources: ['BLS', 'REUTERS'] },
-  { type: 'nuance', title: 'Nuance Required', badge: 'partial', conf: null, text: '"Inflation has returned to pre-pandemic levels across all major sectors as of Dec 2023."', note: '3 Supporting / 2 Conflicting' },
-];
-
-const STEPS = [
-  { label: 'Extracting Claims', status: 'completed', icon: 'article', claims: ['"US unemployment fell to 3.4%..."', '"Inflation reached 10-year low..."', '"GDP growth exceeded 2%..."'] },
-  { label: 'Searching the Web', status: 'active', icon: 'search', queries: ['[US unemployment rate 2023]', '[Bureau of Labor Statistics data Dec 2023]'] },
-  { label: 'Verifying & Scoring', status: 'queued', icon: 'assessment', note: 'Waiting for search results...' },
-];
+import { useAnalysis } from '../store/analysisStore';
 
 const STATUS_COLOR = { completed: 'var(--green)', active: 'var(--blue)', queued: 'var(--text-muted)' };
 const STATUS_BG = { completed: 'rgba(26,107,26,0.1)', active: 'rgba(29,78,216,0.1)', queued: 'var(--bg)' };
@@ -19,12 +9,19 @@ const STATUS_BADGE = { completed: 'completed', active: 'progress', queued: 'unkn
 
 export default function LiveAnalysisPage() {
   const navigate = useNavigate();
-  const [tick, setTick] = useState(0);
+  const { state, dispatch } = useAnalysis();
 
   useEffect(() => {
-    const t = setInterval(() => setTick(x => x + 1), 2000);
-    return () => clearInterval(t);
-  }, []);
+    if (state.status === 'idle' && !state.report) {
+      navigate('/verify');
+    }
+  }, [state.status, state.report, navigate]);
+
+  useEffect(() => {
+    if (state.status === 'complete' && state.report) {
+      navigate('/reports');
+    }
+  }, [state.status, state.report, navigate]);
 
   return (
     <div className="animate-in">
@@ -49,19 +46,21 @@ export default function LiveAnalysisPage() {
             <span className="spinner-sm" style={{ display: 'inline-block', width: 8, height: 8, borderWidth: 1.5, marginRight: 2 }}></span>
             In Progress
           </span>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Session ID: 492-AXV-901</span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>Session ID: {state.report?.report_id?.slice(0, 12) ?? 'Processing...'}</span>
         </div>
         <h1 style={{ fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: 10, lineHeight: 1.1, maxWidth: 640 }}>
-          Analyzing Economic Report: Q4-2023 Executive Summary
+          {state.inputType === 'URL' ? 'Analyzing URL submission' : 'Analyzing submitted text'}
         </h1>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 28, maxWidth: 540 }}>
-          We are currently cross-referencing claims from your document against 42 global financial databases and live economic indicators.
+          {`Verifying: "${(state.inputContent ?? '').slice(0, 80)}${
+            (state.inputContent ?? '').length > 80 ? '...' : ''
+          }"`}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24 }}>
           {/* Left: Steps timeline */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {STEPS.map((step, si) => (
+            {state.stages.map((step, si) => (
               <div key={step.label} style={{ display: 'flex', gap: 12 }}>
                 {/* Timeline track */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32 }}>
@@ -79,7 +78,7 @@ export default function LiveAnalysisPage() {
                       : <span className="material-icons-round" style={{ fontSize: '0.9rem', color: STATUS_COLOR[step.status] }}>{step.icon}</span>
                     }
                   </div>
-                  {si < STEPS.length - 1 && (
+                  {si < state.stages.length - 1 && (
                     <div style={{
                       width: 2, flex: 1, minHeight: 20,
                       background: step.status === 'completed'
@@ -123,26 +122,35 @@ export default function LiveAnalysisPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {INSIGHTS.map((ins, i) => (
+              {state.verifiedSoFar.map((claim_id, i) => {
+                const ins = {
+                  badge: 'progress',
+                  title: 'Claim Verified',
+                  text: `Claim ${claim_id} has been verified`,
+                  conf: null,
+                  sources: [],
+                };
+
+                return (
                 <div key={i} className="card animate-in" style={{
-                  borderLeft: `3px solid ${ins.badge === 'true' ? 'var(--green-vivid)' : 'var(--amber)'}`,
+                  borderLeft: `3px solid ${ins.badge === 'true' ? 'var(--green-vivid)' : ins.badge === 'progress' ? 'var(--blue)' : 'var(--amber)'}`,
                   animationDelay: `${i * 0.1}s`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{
                         width: 28, height: 28, borderRadius: 7,
-                        background: ins.badge === 'true' ? 'var(--green-bg)' : 'var(--amber-bg)',
+                        background: ins.badge === 'true' ? 'var(--green-bg)' : ins.badge === 'progress' ? 'var(--blue-bg)' : 'var(--amber-bg)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        <span className="material-icons-round" style={{ color: ins.badge === 'true' ? 'var(--green)' : 'var(--amber)', fontSize: '0.9rem' }}>
-                          {ins.badge === 'true' ? 'check_circle' : 'warning_amber'}
+                        <span className="material-icons-round" style={{ color: ins.badge === 'true' ? 'var(--green)' : ins.badge === 'progress' ? 'var(--blue)' : 'var(--amber)', fontSize: '0.9rem' }}>
+                          {ins.badge === 'true' ? 'check_circle' : ins.badge === 'progress' ? 'autorenew' : 'warning_amber'}
                         </span>
                       </div>
                       <span className="section-label" style={{ margin: 0 }}>{ins.title}</span>
                     </div>
-                    <span className={`badge badge-${ins.badge === 'true' ? 'true' : 'partial'}`}>
-                      {ins.badge === 'true' ? '✓ TRUE' : '⚠ PARTIALLY TRUE'}
+                    <span className={`badge badge-${ins.badge === 'true' ? 'true' : ins.badge === 'progress' ? 'blue' : 'partial'}`}>
+                      {ins.badge === 'true' ? '✓ TRUE' : ins.badge === 'progress' ? 'PROGRESS' : '⚠ PARTIALLY TRUE'}
                     </span>
                   </div>
                   <p style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.6, marginBottom: 10 }}>{ins.text}</p>
@@ -161,23 +169,30 @@ export default function LiveAnalysisPage() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
 
               {/* Loading card */}
-              <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '20px 22px' }}>
-                <div className="spinner"></div>
-                <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 3 }}>Scrutinizing Data Clusters</div>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cross-referencing {42 + tick} sources...</p>
+              {state.status !== 'complete' && (
+                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '20px 22px' }}>
+                  <div className="spinner"></div>
+                  <div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 3 }}>Scrutinizing Data Clusters</div>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{`Processing ${state.claimsFound.length} claims...`}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
               <button className="btn btn-primary" onClick={() => navigate('/reports')}>
                 <span className="material-icons-round">analytics</span>View Full Report
               </button>
-              <button className="btn btn-secondary">
+              <button className="btn btn-secondary" onClick={() => {
+                state.cancelFn?.();
+                dispatch({ type: 'RESET' });
+                navigate('/verify');
+              }}>
                 <span className="material-icons-round">pause</span>Pause
               </button>
             </div>
