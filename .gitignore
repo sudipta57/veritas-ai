@@ -82,3 +82,6 @@ Thumbs.db
 *.db
 *.tmp
 *.bak
+.env
+**/.env
+*.env
