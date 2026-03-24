@@ -60,6 +60,7 @@ function updateStageStatuses(
 }
 
 function analysisReducer(state: AnalysisState, action: AnalysisAction): AnalysisState {
+  console.log('[Store reducer] action=', action.type, 'current status=', state.status);
   switch (action.type) {
     case 'START':
       return {
@@ -163,6 +164,7 @@ function analysisReducer(state: AnalysisState, action: AnalysisAction): Analysis
     }
 
     case 'COMPLETE':
+      console.log('[Reducer COMPLETE] setting report:', !!action.report, 'report_id:', action.report?.report_id);
       return {
         ...state,
         status: 'complete',

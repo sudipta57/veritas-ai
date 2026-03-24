@@ -61,35 +61,76 @@ export function startVerification(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
     signal: controller.signal,
-  })
-    .then(async (res) => {
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+  }).then(async (res) => {
+    if (!res.ok) {
+      onError(`HTTP error ${res.status}`);
+      return;
+    }
+    
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          onDone();
-          break;
+    const pump = async (): Promise<void> => {
+      const { done, value } = await reader.read();
+
+      // Decode current chunk even if done
+      if (value) {
+        buffer += decoder.decode(value, { stream: !done });
+      }
+
+      // Always process whatever is in the buffer
+      // Split on double newline first, then single newline as fallback
+      const parts = buffer.split('\n\n');
+
+      // If done, process ALL parts including the last one
+      // If not done, keep the last incomplete chunk in buffer
+      if (done) {
+        // Process every part including the last
+        for (const part of parts) {
+          processSSEPart(part);
         }
-        buffer += decoder.decode(value, { stream: true });
-        // Fix: splitting only on '\n' can miss event boundaries when transport batches as '\n\n'; handle both framings.
-        const lines = buffer.split(/\n\n|\n/);
-        buffer = lines.pop() ?? '';
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
+        onDone();
+        return;
+      } else {
+        // Keep last potentially incomplete chunk
+        buffer = parts.pop() ?? '';
+        for (const part of parts) {
+          processSSEPart(part);
+        }
+      }
+
+      await pump();
+    };
+
+    // Extract the SSE processing into a helper function
+    const processSSEPart = (part: string) => {
+      if (!part.trim()) return;
+      const lines = part.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data: ')) {
+          const jsonStr = trimmed.slice(6).trim();
+          if (jsonStr) {
             try {
-              const parsed = JSON.parse(line.slice(6));
+              const parsed = JSON.parse(jsonStr);
+              console.log('[SSE received]', parsed.stage, parsed);
               onEvent(parsed as SSEStage);
-            } catch {}
+            } catch (e) {
+              console.error('[SSE parse error]', jsonStr, e);
+            }
           }
         }
       }
-    })
-    .catch((err) => {
-      if (err.name !== 'AbortError') onError(err.message);
-    });
+    };
+
+    await pump();
+  }).catch((err) => {
+    if (err.name !== 'AbortError') {
+      console.error('[SSE connection error]', err);
+      onError(err.message);
+    }
+  });
 
   return () => controller.abort();
 }

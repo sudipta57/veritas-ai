@@ -71,10 +71,10 @@ export default function ReportsPage() {
                   <div className="section-label">Total Analysis</div>
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12 }}>{report.total_claims} Claims Verified</div>
                   <div style={{ display: 'flex', gap: 20 }}>
-                    {verdictItems.map(([v, l, c]) => (
-                      <div key={l}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', fontWeight: 800, color: `var(--${c})` }}>{v}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{l}</div>
+                    {verdictItems.map(([value, label, color]) => (
+                      <div key={label}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', fontWeight: 800, color: `var(--${color})` }}>{value}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{label}</div>
                       </div>
                     ))}
                   </div>
@@ -102,7 +102,7 @@ export default function ReportsPage() {
 
             {/* Claims */}
             <div>
-              {report.claims.map((claim, i) => {
+              {report.claims.map((claim) => {
                 const verdict = claim.verdict;
                 const verdictBorder = verdict === 'TRUE'
                   ? 'var(--green)'
@@ -124,7 +124,7 @@ export default function ReportsPage() {
                         : { cls: 'badge-partial', text: 'Unverifiable' };
 
                 return (
-                <div key={claim.claim_id ?? i} className="card" style={{ marginBottom: 14, borderLeft: `3px solid ${verdictBorder}` }}>
+                <div key={claim.claim_id} className="card" style={{ marginBottom: 14, borderLeft: `3px solid ${verdictBorder}` }}>
                   {claim.is_conflicting === true && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 10px', background: 'var(--red-bg)', borderRadius: 7, marginBottom: 12 }}>
                       <span className="material-icons-round" style={{ color: 'var(--red)', fontSize: '0.9rem' }}>warning</span>
@@ -147,10 +147,10 @@ export default function ReportsPage() {
                     <>
                       <div className="section-label">Evidence Triangulation</div>
                       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                        {claim.sources.map(s => (
-                          <div key={s} className="tag" style={{ padding: '6px 10px', borderRadius: 7, lineHeight: 1.5 }}>
+                        {claim.sources.map(source => (
+                          <div key={source.url} className="tag" style={{ padding: '6px 10px', borderRadius: 7, lineHeight: 1.5 }}>
                             <span className="material-icons-round" style={{ fontSize: '0.7rem', color: 'var(--navy)' }}>verified</span>
-                            {s.title} / {s.tier} <span style={{ color: 'var(--text-muted)' }}>Supports</span>
+                            {source.title} / {source.tier} <span style={{ color: 'var(--text-muted)' }}>Supports</span>
                           </div>
                         ))}
                       </div>

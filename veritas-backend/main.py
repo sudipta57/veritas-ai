@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import json
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,9 +8,20 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipe
 import uvicorn
 
 from api.routes import router
+from utils.llm import call_llm
+
+logger = logging.getLogger("veritasai")
 
 
 AI_MODEL_NAME = "roberta-base-openai-detector"
+
+
+async def startup_llm_check():
+    try:
+        result = await call_llm("You are a test.", "Reply with just the word: OK")
+        logger.info("✓ Gemini LLM check passed: %s", result[:20])
+    except Exception as e:
+        logger.error("✗ Gemini LLM check FAILED: %s", str(e))
 
 
 @asynccontextmanager
@@ -21,6 +34,7 @@ async def lifespan(app: FastAPI):
         tokenizer=tokenizer,
     )
     print("VeritasAI backend started")
+    await startup_llm_check()
     yield
 
 
@@ -35,6 +49,20 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api")
+
+
+@app.get("/api/test-sse")
+async def test_sse():
+    from sse_starlette.sse import EventSourceResponse
+    import asyncio
+
+    async def generator():
+        for i in range(5):
+            yield {"data": json.dumps({"stage": "test", "data": {"count": i}})}
+            await asyncio.sleep(0.5)
+        yield {"data": json.dumps({"stage": "complete", "data": {"count": "done"}})}
+
+    return EventSourceResponse(generator())
 
 
 if __name__ == "__main__":

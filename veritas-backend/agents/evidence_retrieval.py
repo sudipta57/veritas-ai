@@ -19,7 +19,7 @@ class EvidenceRetrievalAgent:
 
 	async def retrieve_all(self, claims: list[Claim]) -> dict[str, list[Source]]:
 		"""Retrieve evidence for all claims concurrently with bounded workers."""
-		semaphore = asyncio.Semaphore(5)
+		semaphore = asyncio.Semaphore(1)
 		claim_results = await asyncio.gather(
 			*(self._retrieve_for_claim(claim, semaphore) for claim in claims)
 		)

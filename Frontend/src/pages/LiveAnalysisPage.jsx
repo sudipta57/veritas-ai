@@ -10,18 +10,27 @@ const STATUS_BADGE = { completed: 'completed', active: 'progress', queued: 'unkn
 export default function LiveAnalysisPage() {
   const navigate = useNavigate();
   const { state, dispatch } = useAnalysis();
+  console.log('[Live render]', {
+    status: state.status,
+    hasReport: !!state.report,
+    reportId: state.report?.report_id,
+  });
 
   useEffect(() => {
+    console.log('[LiveAnalysisPage] redirect check — status=', state.status, 'report=', !!state.report);
     if (state.status === 'idle' && !state.report) {
+      console.log('[LiveAnalysisPage] REDIRECTING to /verify');
       navigate('/verify');
     }
   }, [state.status, state.report, navigate]);
 
   useEffect(() => {
+    console.log('[Live complete effect] fired — status:', state.status, 'report:', !!state.report);
     if (state.status === 'complete' && state.report) {
+      console.log('[Live complete effect] NAVIGATING to /reports');
       navigate('/reports');
     }
-  }, [state.status, state.report, navigate]);
+  }, [state.status, state.report]);
 
   return (
     <div className="animate-in">

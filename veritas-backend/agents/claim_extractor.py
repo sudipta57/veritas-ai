@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 
 from models.schemas import Claim
 from utils.llm import call_llm
+
+logger = logging.getLogger("veritasai")
 
 
 class ClaimExtractorAgent:
@@ -14,17 +18,34 @@ class ClaimExtractorAgent:
 	def __init__(self) -> None:
 		pass
 
+	def _clean_llm_json(self, raw: str) -> str:
+		import re
+		# Remove markdown fences
+		cleaned = re.sub(r'```(?:json)?\s*', '', raw)
+		cleaned = re.sub(r'```', '', cleaned)
+		cleaned = cleaned.strip()
+		
+		# Find the JSON array boundaries — extract only the
+		# content between the first [ and last ]
+		start = cleaned.find('[')
+		end = cleaned.rfind(']')
+		if start != -1 and end != -1 and end > start:
+			cleaned = cleaned[start:end+1]
+		
+		return cleaned
+
 	async def extract(self, text: str) -> list[Claim]:
 		"""Extract claims and return them as validated Claim models."""
 		raw_output = await self._run_extraction_prompt(text)
 
 		try:
-			parsed = json.loads(raw_output)
+			parsed = json.loads(self._clean_llm_json(raw_output))
 		except json.JSONDecodeError:
 			raw_output = await self._run_extraction_prompt(text, retry=True)
 			try:
-				parsed = json.loads(raw_output)
+				parsed = json.loads(self._clean_llm_json(raw_output))
 			except json.JSONDecodeError as exc:
+				logger.error("[ClaimExtractor] Raw output that failed to parse:\n%s", raw_output)
 				raise ValueError("Failed to parse claim extraction JSON output") from exc
 
 		if not isinstance(parsed, list):

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalysis } from '../store/analysisStore';
 import { startVerification } from '../services/api';
@@ -9,7 +9,7 @@ export default function VerifyPage() {
   const [text, setText] = useState('');
   const [url, setUrl] = useState('');
   const [model, setModel] = useState('ultra');
-  const { dispatch } = useAnalysis();
+  const { state, dispatch } = useAnalysis();
   const isSubmitting = useRef(false);
   const [opts, setOpts] = useState({
     'Deep Source Triangulation': true,
@@ -39,46 +39,75 @@ export default function VerifyPage() {
   const charLimit = 10000;
   const charPct = Math.min((text.length / charLimit) * 100, 100);
 
+  useEffect(() => {
+    if (state.status === 'complete' && state.report) {
+      navigate('/reports');
+    }
+  }, [state.status, state.report]);
+
   const handleSubmit = () => {
-    if (isSubmitting.current) return;
-    if (tab === 'url' && !url.trim()) return;
-    if (tab !== 'url' && !text.trim()) return;
+    console.log('[handleSubmit] called, tab=', tab, 'text=', text.slice(0, 50));
+    if (isSubmitting.current) {
+      console.log('[handleSubmit] blocked — already submitting');
+      return;
+    }
+    if (tab === 'url' && !url.trim()) {
+      console.log('[handleSubmit] blocked — empty URL');
+      return;
+    }
+    if (tab !== 'url' && !text.trim()) {
+      console.log('[handleSubmit] blocked — empty text');
+      return;
+    }
 
     isSubmitting.current = true;
 
     const inputType = tab === 'url' ? 'URL' : 'TEXT';
     const inputContent = tab === 'url' ? url : text;
 
+    console.log('[handleSubmit] proceeding with dispatch START');
     dispatch({ type: 'START', inputType, inputContent });
 
+    console.log('[handleSubmit] calling startVerification');
     const cancel = startVerification(
       { input_type: inputType, content: inputContent },
       (event) => {
+        console.log('[handleSubmit onEvent]', event.stage, event);
+        console.log('[onEvent] received stage:', event.stage, 'data:', event.data);
         if (event.stage === 'extracting') {
+          console.log('[onEvent] dispatching SET_STAGE extracting');
           dispatch({ type: 'SET_STAGE', stage: 'extracting' });
         } else if (event.stage === 'claims_found') {
+          console.log('[onEvent] dispatching CLAIMS_FOUND', event.data?.claims);
           dispatch({ type: 'CLAIMS_FOUND', claims: event.data.claims });
         } else if (event.stage === 'retrieving') {
+          console.log('[onEvent] dispatching SET_STAGE retrieving');
           dispatch({ type: 'SET_STAGE', stage: 'retrieving' });
         } else if (event.stage === 'verifying') {
+          console.log('[onEvent] dispatching CLAIM_VERIFIED', event.data?.claim_id);
           dispatch({ type: 'CLAIM_VERIFIED', claim_id: event.data.claim_id });
         } else if (event.stage === 'complete') {
+          console.log('[onEvent complete] dispatching COMPLETE, data:', JSON.stringify(event.data).slice(0, 100));
           dispatch({ type: 'COMPLETE', report: event.data });
-          navigate('/reports');
+          console.log('[onEvent complete] dispatch done');
         } else if (event.stage === 'error') {
+          console.log('[onEvent] dispatching ERROR', event.data?.message);
           dispatch({ type: 'ERROR', message: event.data.message });
           isSubmitting.current = false;
         }
       },
       () => {
+        console.log('[handleSubmit onDone] stream closed');
         isSubmitting.current = false;
       },
       (err) => {
+        console.log('[handleSubmit onError]', err);
         dispatch({ type: 'ERROR', message: err });
         isSubmitting.current = false;
       }
     );
 
+    console.log('[handleSubmit] navigating to /live');
     dispatch({ type: 'SET_CANCEL', cancelFn: cancel });
     navigate('/live');
   };

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import ast
 import json
+import re
 
 from models.schemas import Claim, ClaimVerdict, Source, VerdictType
 from utils.llm import call_llm
@@ -14,6 +16,12 @@ class VerifierAgent:
 
 	def __init__(self) -> None:
 		pass
+
+	def _clean_llm_json(self, raw: str) -> str:
+		# Strip markdown code fences that Gemini adds despite being told not to
+		cleaned = re.sub(r'```(?:json)?\s*', '', raw)
+		cleaned = re.sub(r'```', '', cleaned)
+		return cleaned.strip()
 
 	async def verify_claim(self, claim: Claim, sources: list[Source]) -> ClaimVerdict:
 		"""Run conflict-aware verification with a self-reflection safety pass."""
@@ -32,7 +40,9 @@ class VerifierAgent:
 		if has_conflict:
 			return self._build_conflicting_verdict(claim, sources, position_a, position_b)
 
+		await asyncio.sleep(4)
 		initial_verdict = await self._run_verification(claim, sources)
+		await asyncio.sleep(4)
 		final_verdict = await self._self_reflection_check(claim, sources, initial_verdict)
 
 		return ClaimVerdict(
@@ -71,7 +81,8 @@ class VerifierAgent:
 		)
 
 		try:
-			result = await self._call_llm_json(system_prompt, user_prompt)
+			raw_output = await call_llm(system_prompt, user_prompt)
+			result = json.loads(self._clean_llm_json(raw_output))
 		except Exception:
 			return False, "", ""
 
@@ -109,7 +120,8 @@ class VerifierAgent:
 		)
 
 		try:
-			result = await self._call_llm_json(system_prompt, user_prompt)
+			raw_output = await call_llm(system_prompt, user_prompt)
+			result = json.loads(self._clean_llm_json(raw_output))
 		except Exception:
 			return {
 				"verdict": "UNVERIFIABLE",
@@ -145,7 +157,8 @@ class VerifierAgent:
 		)
 
 		try:
-			result = await self._call_llm_json(system_prompt, user_prompt)
+			raw_output = await call_llm(system_prompt, user_prompt)
+			result = json.loads(self._clean_llm_json(raw_output))
 		except Exception:
 			fallback_verdict = self._normalize_verdict(verdict.get("verdict"))
 			return {
